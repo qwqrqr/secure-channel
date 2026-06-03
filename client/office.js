@@ -20,7 +20,7 @@ import {
     downloadFile, getFileIcon, formatSize
 } from './file-handler.js';
 
-const GATEWAY_URL = 'ws://localhost:8080';
+const GATEWAY_URL = 'wss://secure-channel-production.up.railway.app';
 
 // -------- Роль по URL --------
 const params = new URLSearchParams(location.search);
@@ -218,7 +218,7 @@ document.getElementById('sendFileBtn').addEventListener('click', async () => {
     if (dlpResult.status === 'block') {
         addLog({
             level: 'error',
-            message: `🚫 DLP заблокировал отправку файла «${selectedFile.name}»: ${dlpResult.matches.map(m => m.ruleName).join(', ')}`,
+            message: `DLP заблокировал отправку файла «${selectedFile.name}»: ${dlpResult.matches.map(m => m.ruleName).join(', ')}`,
             ts: new Date().toISOString()
         });
         return;
@@ -241,7 +241,7 @@ document.getElementById('sendFileBtn').addEventListener('click', async () => {
     try {
         addLog({
             level: 'info',
-            message: `📤 Отправляю файл «${selectedFile.name}» (${formatSize(selectedFile.size)}) — шифрую AES-GCM...`,
+            message: `Отправляю файл «${selectedFile.name}» (${formatSize(selectedFile.size)}) — шифрую AES-GCM...`,
             ts: new Date().toISOString()
         });
 
@@ -253,7 +253,7 @@ document.getElementById('sendFileBtn').addEventListener('click', async () => {
 
         addLog({
             level: 'success',
-            message: `✅ Файл «${selectedFile.name}» отправлен зашифрованным`,
+            message: `Файл «${selectedFile.name}» отправлен зашифрованным`,
             ts: new Date().toISOString()
         });
 
@@ -310,7 +310,7 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
                     // Входящий файл
                     addLog({
                         level: 'success',
-                        message: `📥 Получен файл «${parsed.name}» от ${from.toUpperCase()} (${formatSize(parsed.size)}) — расшифрован`,
+                        message: `Получен файл «${parsed.name}» от ${from.toUpperCase()} (${formatSize(parsed.size)}) — расшифрован`,
                         ts: new Date().toISOString()
                     });
                     addFileMessage('in', parsed, from);
@@ -342,7 +342,7 @@ document.getElementById('connectBtn').addEventListener('click', async () => {
 
     channel.addEventListener('attack', e => {
         const { reason, packet } = e.detail;
-        addMessage('attack', `🚨 Пакет отвергнут: ${reason}`, `counter=${packet.counter}`);
+        addMessage('attack', `Пакет отвергнут: ${reason}`, `counter=${packet.counter}`);
     });
 
     await channel.connect();
@@ -390,7 +390,7 @@ document.getElementById('sendBtn').addEventListener('click', async () => {
     if (result.status === 'block') {
         addLog({
             level: 'error',
-            message: `🚫 DLP заблокировал отправку: ${result.matches.map(m => m.ruleName).join(', ')}`,
+            message: `DLP заблокировал отправку: ${result.matches.map(m => m.ruleName).join(', ')}`,
             ts: new Date().toISOString()
         });
         runDlpCheck();
