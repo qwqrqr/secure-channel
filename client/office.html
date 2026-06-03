@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Channel - Office</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* ===== File Upload Zone ===== */
+        .file-drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 28px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: var(--bg);
+        }
+        .file-drop-zone:hover, .file-drop-zone.dragover {
+            border-color: var(--accent);
+            background: rgba(56,189,248,0.05);
+        }
+        .file-drop-zone .drop-icon { font-size: 36px; margin-bottom: 8px; }
+        .file-drop-zone .drop-hint { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+        /* ===== File Preview Card ===== */
+        .file-preview-card {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .file-preview-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--panel-2);
+        }
+        .file-preview-header .file-icon { font-size: 22px; }
+        .file-preview-header .file-meta { flex: 1; min-width: 0; }
+        .file-preview-header .file-name {
+            font-size: 14px; font-weight: 600;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .file-preview-header .file-size { font-size: 12px; color: var(--muted); }
+        .file-preview-body { padding: 10px; background: var(--bg); }
+        .file-preview-inner { width: 100%; }
+
+        /* ===== Messages with files ===== */
+        .message.file-msg {
+            background: var(--panel-2);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+        .message.file-msg.in  { border-left: 3px solid var(--ok); }
+        .message.file-msg.out { border-left: 3px solid var(--accent); }
+        .file-msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+        .file-msg-actions { margin-top: 8px; display: flex; gap: 8px; }
+        .btn-sm {
+            padding: 5px 12px; font-size: 12px; border-radius: 6px;
+            border: 1px solid var(--border); background: var(--panel);
+            color: var(--text); cursor: pointer;
+        }
+        .btn-sm:hover { background: var(--panel-2); }
+        .btn-sm.accent { background: var(--accent); color: #0f172a; border-color: var(--accent); }
+
+        /* ===== DLP file result ===== */
+        .dlp-file-warn { color: var(--warn); font-size: 13px; margin-top: 6px; }
+        .dlp-file-block { color: var(--err); font-size: 13px; margin-top: 6px; }
+
+        /* ===== Tab switcher ===== */
+        .tab-bar { display: flex; gap: 4px; margin-bottom: 12px; }
+        .tab-btn {
+            padding: 6px 16px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--bg); color: var(--muted); cursor: pointer; font-size: 13px;
+        }
+        .tab-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 600; }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        /* ===== Rule sync badge ===== */
+        .sync-badge {
+            display: inline-block;
+            background: var(--ok);
+            color: #052e16;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 99px;
+            margin-left: 8px;
+            animation: fadein 0.3s;
+        }
+        @keyframes fadein { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+    </style>
+</head>
+<body>
+
+<header class="app-header">
+    <h1>
+        Secure Channel
+        <span id="roleBadge" class="role-badge role-hq">HQ</span>
+    </h1>
+    <div>
+        <span class="muted">Состояние:</span>
+        <span id="stateLabel" class="state-pill">IDLE</span>
+        <span class="muted" style="margin-left: 12px;">Туннель:</span>
+        <span id="tunnelLabel" class="kbd">-</span>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- Подключение -->
+    <div class="card">
+        <h3>Подключение к туннелю</h3>
+        <div class="row">
+            <input id="tunnelInput" placeholder="ID туннеля (общий для HQ и Remote)" value="office-2026">
+            <input id="userInput" placeholder="Имя пользователя" value="">
+            <button id="connectBtn">Подключиться к шлюзу</button>
+        </div>
+        <div class="muted" id="fingerprintRow" style="margin-top:10px; display:none;">
+            Отпечаток сеансового ключа:
+            <span id="fingerprint" class="fingerprint">—</span>
+            <span class="muted">(должен совпадать у обеих сторон)</span>
+        </div>
+    </div>
+
+    <div class="grid">
+
+        <!-- ЛЕВАЯ КОЛОНКА: Отправка -->
+        <div>
+            <div class="card">
+                <h3>Отправить в защищённый канал</h3>
+
+                <!-- Вкладки: Текст / Файл -->
+                <div class="tab-bar">
+                    <button class="tab-btn active" data-tab="text">Текст</button>
+                    <button class="tab-btn" data-tab="file">Файл</button>
+                </div>
+
+                <!-- Вкладка: текст -->
+                <div class="tab-pane active" id="tab-text">
+                    <textarea id="msgInput" placeholder="Введите текст сообщения..." style="height:100px;"></textarea>
+                    <div class="row" style="margin-top:8px;">
+                        <button id="checkDlpBtn" class="secondary">Проверить DLP</button>
+                        <button id="sendBtn" disabled>Зашифровать и отправить</button>
+                    </div>
+                    <div id="dlpResult" class="dlp-result" style="display:none;"></div>
+                </div>
+
+                <!-- Вкладка: файл -->
+                <div class="tab-pane" id="tab-file">
+                    <div class="file-drop-zone" id="fileDropZone">
+                        <div class="drop-icon">📂</div>
+                        <div><b>Перетащите файл</b> или нажмите для выбора</div>
+                        <div class="drop-hint">PDF, Word, Excel, PowerPoint, изображения, текст — до 10 МБ</div>
+                        <input type="file" id="fileInput" style="display:none"
+                               accept=".pdf,.doc,.docx,.xlsx,.xls,.pptx,.ppt,.txt,.csv,.png,.jpg,.jpeg,.gif,.webp">
+                    </div>
+
+                    <div id="filePreviewArea" style="display:none; margin-top:10px;">
+                        <div class="file-preview-card">
+                            <div class="file-preview-header">
+                                <span class="file-icon" id="prevIcon">📄</span>
+                                <div class="file-meta">
+                                    <div class="file-name" id="prevName">—</div>
+                                    <div class="file-size" id="prevSize">—</div>
+                                </div>
+                                <button class="btn-sm" id="clearFileBtn">✕ Убрать</button>
+                            </div>
+                            <div class="file-preview-body">
+                                <div class="file-preview-inner" id="filePreviewInner"></div>
+                            </div>
+                        </div>
+                        <div id="fileDlpResult" style="margin-top:8px;"></div>
+                        <div class="row" style="margin-top:10px;">
+                            <button id="checkFileDlpBtn" class="secondary">DLP-проверка файла</button>
+                            <button id="sendFileBtn" disabled>Зашифровать и отправить файл</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Чат-история -->
+            <div class="card">
+                <h3>Чат-история (расшифрованная)</h3>
+                <div id="messages" class="messages" style="min-height:200px;"></div>
+            </div>
+        </div>
+
+        <!-- ПРАВАЯ КОЛОНКА: Журнал и DLP-правила -->
+        <div>
+            <div class="card">
+                <h3>Журнал событий канала</h3>
+                <div id="log" class="log"></div>
+            </div>
+
+            <div class="card">
+                <h3>DLP-правила <span id="syncBadge" style="display:none;" class="sync-badge">синхронизировано</span></h3>
+                <table>
+                    <thead>
+                        <tr><th>Название</th><th>Regex</th><th>Действие</th><th></th></tr>
+                    </thead>
+                    <tbody id="rulesBody"></tbody>
+                </table>
+                <details style="margin-top: 10px;">
+                    <summary class="muted" style="cursor:pointer;">+ Добавить своё правило</summary>
+                    <div style="margin-top: 10px;">
+                        <input id="ruleName" placeholder="Название (например: Номер телефона)">
+                        <input id="ruleRegex" placeholder="Regex (например: \\+7\\d{10})">
+                        <select id="ruleAction">
+                            <option value="block">block — заблокировать отправку</option>
+                            <option value="warning">warning — предупредить</option>
+                        </select>
+                        <button id="addRuleBtn" class="secondary" style="margin-top:8px;">Добавить и синхронизировать</button>
+                        <div class="muted" style="font-size:12px;margin-top:6px;">
+                            ℹ Новое правило автоматически отправится второй стороне через зашифрованный канал
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- Демо-инструменты -->
+    <div class="card">
+        <h3>Демо-инструменты</h3>
+        <div class="row">
+            <button id="openWireBtn" class="secondary">Перехватчик (Eve)</button>
+            <button id="openAuditBtn" class="secondary">Журнал шлюза</button>
+            <button id="tamperBtn" class="danger">Атака: подмена пакета</button>
+        </div>
+    </div>
+
+</div>
+
+<!-- Модальное окно просмотра файла -->
+<div id="fileViewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8); z-index:1000; overflow:auto; padding:40px 20px;">
+    <div style="max-width:900px; margin:0 auto; background:var(--panel); border-radius:12px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px; background:var(--panel-2);">
+            <span id="modalFileName" style="font-weight:600;"></span>
+            <button id="closeModalBtn" style="background:none;border:none;color:var(--text);font-size:20px;cursor:pointer;">✕</button>
+        </div>
+        <div id="modalBody" style="padding:16px;"></div>
+        <div style="padding:12px 20px; display:flex; gap:10px; justify-content:flex-end; background:var(--panel-2);">
+            <button id="modalDownloadBtn" class="secondary">Скачать</button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="office.js"></script>
+</body>
+</html>

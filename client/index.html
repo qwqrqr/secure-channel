@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Secure Channel — стенд</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+    <h1>Secure Channel - учебный стенд</h1>
+    <div class="muted">Дипломный проект: Разработка защиты корпаративных данных </div>
+</header>
+
+<div class="container">
+
+    <div class="card">
+        <h3>Запуск стенда</h3>
+        <ol style="line-height: 1.9;">
+            <li>В терминале: <span class="kbd">cd gateway && npm start && npm run static </span></li>
+            <li>Откройте этот index.html в браузере (через Live Server )</li>
+            <li>Откройте две вкладки: одну как <b>HQ</b>, другую как <b>Remote</b></li>
+            <li>В обеих вкладках укажите одинаковый <b>ID туннеля</b> и нажмите «Подключиться»</li>
+            <li>Стороны автоматически проведут ECDH-handshake → канал готов</li>
+            <li>Отправляйте сообщения, открывайте «Перехватчик» для демонстрации</li>
+        </ol>
+    </div>
+
+    <div class="grid">
+        <div class="card" style="text-align: center;">
+            <h3>Главный офис</h3>
+            <p class="muted">Сторона руководителя / администратора</p>
+            <a href="office.html?peer=hq" target="_blank">
+                <button style="width: 100%;">Открыть HQ →</button>
+            </a>
+        </div>
+
+        <div class="card" style="text-align: center;">
+            <h3>Удалённый офис </h3>
+            <p class="muted">Сторона рядового сотрудника</p>
+            <a href="office.html?peer=remote" target="_blank">
+                <button style="width: 100%;">Открыть Remote →</button>
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h3>Демо-инструменты</h3>
+        <div class="row">
+            <a href="eve.html" target="_blank" style="flex:1;">
+                <button class="secondary" style="width:100%;">Перехватчик (Eve)</button>
+            </a>
+            <a href="http://localhost:8081/audit" target="_blank" style="flex:1;">
+                <button class="secondary" style="width:100%;">Журнал шлюза</button>
+            </a>
+            <a href="http://localhost:8081/tunnels" target="_blank" style="flex:1;">
+                <button class="secondary" style="width:100%;">Активные туннели</button>
+            </a>
+        </div>
+    </div>
+
+   
+        <h3> Что демонстрировать на защите</h3>
+        <ol style="line-height: 1.8;">
+            <li><b>Установка туннеля.</b> Показать handshake в журналах обеих сторон,
+                обратить внимание на одинаковый отпечаток сеансового ключа.</li>
+            <li><b>Передача сообщения.</b> Отправить нормальный текст, показать что он пришёл расшифрованным.</li>
+            <li><b>Перехват.</b> Открыть Eve - там видно только base64 шифротекст, никакого открытого текста.</li>
+            <li><b>Атака подмены.</b> Нажать «Атака: подмена пакета» - на той стороне
+                HMAC не сойдётся, пакет отвергнут с пометкой «АТАКА ПЕРЕХВАЧЕНА».</li>
+            <li><b>DLP.</b> Попробовать отправить «Мой ИИН 123456789012» - DLP заблокирует
+                ещё до шифрования.</li>
+            <li><b>Anti-replay.</b> Через журнал шлюза показать поле <code>counter</code>
+                и пояснить, что повторная отправка того же пакета отвергается.</li>
+        </ol>
+    </div>
+
+</div>
+</body>
+</html>

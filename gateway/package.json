@@ -1,0 +1,16 @@
+{
+  "name": "secure-channel-gateway",
+  "version": "1.0.0",
+  "description": "VPN-like gateway for HQ <-> Remote office secure channel demo",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "static": "node static_server.js",
+    "test": "node e2e_test.js",
+    "test:replay": "node replay_test.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.9.0",
+    "ws": "^8.21.0"
+  }
+}
